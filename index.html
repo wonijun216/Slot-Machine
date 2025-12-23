@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>슬롯머신</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #000;
+      color: #fff;
+    }
+    .machine {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .slot {
+      width: 90px;
+      height: 90px;
+      background: #222;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      overflow: hidden;
+      position: relative;
+    }
+    .slot span {
+      position: absolute;
+      animation-name: roll;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    .idle span { animation-duration: 1s; }
+    .spinning span { animation-duration: 0.15s; }
+    .stopped span { animation: none; }
+
+    @keyframes roll {
+      from { transform: translateY(-120%); }
+      to   { transform: translateY(120%); }
+    }
+
+    button {
+      padding: 10px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <div class="machine">
+    <div class="slot idle"><span>🍬</span></div>
+    <div class="slot idle"><span>🍭</span></div>
+    <div class="slot idle"><span>🍫</span></div>
+  </div>
+  <button id="spinBtn">SPIN</button>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const slots = Array.from(document.querySelectorAll('.slot'));
+      const spinBtn = document.getElementById('spinBtn');
+
+      const symbols = [ '🍬', '🍭', '🍫' ];
+
+      function randomSymbol() {
+        return symbols[Math.floor(Math.random() * symbols.length)];
+      }
+
+      let idleHandlers = [];
+
+      function startIdleRoll() {
+        stopIdleRoll();
+        slots.forEach(slot => {
+          slot.className = 'slot idle';
+          const span = slot.querySelector('span');
+          span.textContent = randomSymbol();
+
+          const handler = () => {
+            span.textContent = randomSymbol();
+          };
+
+          span.addEventListener('animationiteration', handler);
+          idleHandlers.push({ span, handler });
+        });
+      }
+
+      function stopIdleRoll() {
+        idleHandlers.forEach(({ span, handler }) => {
+          span.removeEventListener('animationiteration', handler);
+        });
+        idleHandlers = [];
+      }
+
+      startIdleRoll();
+
+      spinBtn.addEventListener('click', () => {
+        spinBtn.disabled = true;
+        stopIdleRoll();
+
+        slots.forEach((slot, index) => {
+          slot.className = 'slot spinning';
+          let count = 0;
+
+          const spinInterval = setInterval(() => {
+            slot.querySelector('span').textContent = randomSymbol();
+            count++;
+
+            if (count > 25 + index * 10) {
+              clearInterval(spinInterval);
+              slot.querySelector('span').textContent = randomSymbol();
+              slot.className = 'slot stopped';
+
+              if (index === slots.length - 1) {
+                setTimeout(() => {
+                  spinBtn.disabled = false;
+                  startIdleRoll();
+                }, 3000);
+              }
+            }
+          }, 60);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
